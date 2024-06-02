@@ -1,58 +1,30 @@
+"""
+@file solver.py
+@brief 包含用于求解方程和矩阵运算的函数模块
+@details
+此模块包含了一些用于求解线性方程组、多项式方程和非多项式方程的函数，以及一些矩阵运算函数。
+这些函数包括：
+- 使用 SymPy 求解线性方程组
+- 使用 NumPy 的 roots 函数求解多项式的根
+- 使用 SciPy 的 fsolve 函数求解非多项式的根
+- 验证求出的根是否为方程的根
+- 计算矩阵的行列式、逆矩阵、转置、秩、幂
+- 计算两个矩阵的乘积
+- 计算矩阵的特征值和特征向量
+- 测试非线性方程和线性方程组的解是否满足方程
+
+@version 1.0
+@date 2024-06-02
+"""
+
 import numpy as np
 import sympy as sp
 from scipy.optimize import fsolve
 
-def preprocess_expression(expression):
-    """
-    预处理用户输入的方程表达式，确保格式正确。
-
-    @param expression 方程表达式字符串
-    @return 预处理后的表达式字符串
-    """
-    expression = expression.replace('−', '-')
-    expression = expression.replace('×', '*')
-    expression = expression.replace(' ', '')
-    expression = expression.replace('e', str(sp.E))
-    processed_expr = ''
-    for i in range(len(expression)):
-        if expression[i].isalpha() and i > 0 and (expression[i - 1].isdigit() or expression[i - 1] == ')'):
-            processed_expr += '*' + expression[i]
-        else:
-            processed_expr += expression[i]
-    return processed_expr
-
-def parse_expression(expression):
-    """
-    解析用户输入的方程表达式，并转换为一个可求解的函数。
-
-    @param expression 方程表达式字符串
-    @return 一个包含 SymPy 表达式、符号变量、多项式系数列表（如果是多项式方程）、是否为多项式的元组
-    @throw ValueError 当方程中变量数量不为一个时抛出异常
-    """
-    expression = preprocess_expression(expression)
-
-    if '=' in expression:
-        left, right = expression.split('=')
-        expression = f'({left}) - ({right})'
-
-    symbols = list(sp.sympify(expression).free_symbols)
-    if len(symbols) != 1:
-        raise ValueError("方程中必须包含且仅包含一个变量。")
-
-    symbol = symbols[0]
-    expr = sp.sympify(expression)
-
-    try:
-        poly = sp.Poly(expr, symbol)
-        coeffs = poly.all_coeffs()
-        return expr, symbol, coeffs, True
-    except sp.PolynomialError:
-        return expr, symbol, None, False
 
 def solve_linear_system(equations, variables):
     """
-    使用 SymPy 求解线性方程组。
-
+    @brief 使用 SymPy 求解线性方程组。
     @param equations 线性方程表达式列表
     @param variables 变量列表
     @return 线性方程组的解或无穷多解的参数化形式
@@ -68,21 +40,19 @@ def solve_linear_system(equations, variables):
         return solution_list
 
 
-
 def solve_polynomial(coeffs):
     """
-    使用 NumPy 的 roots 函数求解多项式的根。
-
+    @brief 使用 NumPy 的 roots 函数求解多项式的根。
     @param coeffs 多项式的系数列表
     @return 多项式的根
     """
     roots = np.roots(coeffs)
     return roots
 
+
 def solve_nonpolynomial(func, initial_guesses):
     """
-    使用 SciPy 的 fsolve 函数求解非多项式的根。
-
+    @brief 使用 SciPy 的 fsolve 函数求解非多项式的根。
     @param func 方程的 lambda 函数
     @param initial_guesses 初始猜测值的列表
     @return 非多项式方程的根
@@ -97,21 +67,10 @@ def solve_nonpolynomial(func, initial_guesses):
             continue
     return np.array(roots)
 
-def generate_initial_guesses(n, range_min=0.1, range_max=10):
-    """
-    生成初始猜测值，范围不包括无效值 (如对数函数的非正数输入)。
-
-    @param n 初始猜测值的数量
-    @param range_min 范围最小值 (默认值为 0.1)
-    @param range_max 范围最大值 (默认值为 10)
-    @return 初始猜测值列表
-    """
-    return np.linspace(range_min, range_max, n)
 
 def verify_roots(roots, expr, symbol, tol=1e-6):
     """
-    验证求出的根是否为方程的根。
-
+    @brief 验证求出的根是否为方程的根。
     @param roots 求出的根
     @param expr 方程表达式
     @param symbol 方程中的变量符号
@@ -125,66 +84,66 @@ def verify_roots(roots, expr, symbol, tol=1e-6):
             verified_roots.append(root)
     return verified_roots
 
+
 def calculate_determinant(matrix):
     """
-    计算矩阵的行列式。
-
+    @brief 计算矩阵的行列式。
     @param matrix 输入的矩阵
     @return 矩阵的行列式
     """
     return sp.Matrix(matrix).det()
 
+
 def calculate_inverse(matrix):
     """
-    计算矩阵的逆矩阵。
-
+    @brief 计算矩阵的逆矩阵。
     @param matrix 输入的矩阵
     @return 矩阵的逆矩阵
     """
     return sp.Matrix(matrix).inv()
 
+
 def calculate_transpose(matrix):
     """
-    计算矩阵的转置。
-
+    @brief 计算矩阵的转置。
     @param matrix 输入的矩阵
     @return 矩阵的转置
     """
     return sp.Matrix(matrix).T
 
+
 def calculate_rank(matrix):
     """
-    计算矩阵的秩。
-
+    @brief 计算矩阵的秩。
     @param matrix 输入的矩阵
     @return 矩阵的秩
     """
     return sp.Matrix(matrix).rank()
 
+
 def matrix_power(matrix, power):
     """
-    计算矩阵的幂。
-
+    @brief 计算矩阵的幂。
     @param matrix 输入的矩阵
     @param power 幂次
     @return 矩阵的幂
     """
-    return sp.Matrix(matrix)**power
+    return sp.Matrix(matrix) ** power
+
 
 def multiply_matrices(matrix1, matrix2):
     """
-    计算两个矩阵的乘积。
-
+    @brief 计算两个矩阵的乘积。
     @param matrix1 第一个矩阵
     @param matrix2 第二个矩阵
     @return 两个矩阵的乘积
     """
     return sp.Matrix(matrix1) * sp.Matrix(matrix2)
 
+
 def calculate_eigenvalues_and_vectors(matrix):
     """
-    计算矩阵的特征值和特征向量。
-
+    @brief 计算矩阵的特征值和特征向量。
     @param matrix 输入的矩阵
     @return 特征值和特征向量的列表
     """
@@ -193,10 +152,10 @@ def calculate_eigenvalues_and_vectors(matrix):
     eigenvectors = [sp.Matrix(matrix).eigenvects()[i][2][0] for i in range(len(eigenvalues))]
     return eigenvalues, eigenvectors
 
+
 def test_nonlinear_solution(expr, symbol, solutions, tol=1e-6):
     """
-    测试非线性方程的根是否满足方程。
-
+    @brief 测试非线性方程的根是否满足方程。
     @param expr 方程表达式
     @param symbol 方程中的变量符号
     @param solutions 求得的根列表
@@ -208,10 +167,10 @@ def test_nonlinear_solution(expr, symbol, solutions, tol=1e-6):
         results[sol] = abs(sp.N(expr.subs(symbol, sol))) < tol
     return results
 
+
 def test_linear_solution(coefficients, constants, solutions, tol=1e-6):
     """
-    测试线性方程组的解是否满足方程组。
-
+    @brief 测试线性方程组的解是否满足方程组。
     @param coefficients 系数矩阵
     @param constants 常数向量
     @param solutions 求得的解列表

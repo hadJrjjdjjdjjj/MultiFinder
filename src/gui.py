@@ -1,8 +1,92 @@
+"""
+@file gui.py
+@brief 多功能计算器应用程序的图形用户界面模块
+@details
+此模块包含了多功能计算器应用程序的图形用户界面（GUI）。它提供了用户交互界面，用于输入方程、选择运算类型，并显示计算结果。
+主要功能包括：
+- 非线性方程求解
+- 线性方程组求解
+- 矩阵运算（行列式、逆矩阵、转置、秩、幂、特征值和特征向量等）
+
+@version 1.0
+@date 2024-06-02
+"""
+
 import tkinter as tk
-from solver import parse_expression, solve_polynomial, solve_nonpolynomial, solve_linear_system, verify_roots, \
-    generate_initial_guesses, preprocess_expression, test_nonlinear_solution, \
-    test_linear_solution
+from solver import  solve_polynomial, solve_nonpolynomial, solve_linear_system, verify_roots, \
+    test_nonlinear_solution, test_linear_solution
 import sympy as sp
+from utils import preprocess_expression, generate_initial_guesses,parse_expression, format_number, display_matrix_in_output
+
+
+def get_matrix_from_entries(matrix_entries):
+    """
+    @brief 从输入项中获取矩阵
+    @param matrix_entries 输入项列表
+    @return 矩阵
+    """
+    matrix = []
+    for row_entries in matrix_entries:
+        row = []
+        for entry in row_entries:
+            value = entry.get()
+            if value == "":
+                value = "0"
+            try:
+                row.append(float(value))
+            except ValueError:
+                row.append(0.0)
+        matrix.append(row)
+    return matrix
+
+
+def focus_next_col(event, row, col, entries):
+    """
+    @brief 将焦点移动到同一行的下一列
+    @param event 事件对象
+    @param row 当前行索引
+    @param col 当前列索引
+    @param entries 输入项列表
+    """
+    if col < len(entries[row]) - 1:
+        entries[row][col+1].focus()
+
+
+def focus_previous_col(event, row, col, entries):
+    """
+    @brief 将焦点移动到同一行的上一列
+    @param event 事件对象
+    @param row 当前行索引
+    @param col 当前列索引
+    @param entries 输入项列表
+    """
+    if col > 0:
+        entries[row][col-1].focus()
+
+
+def focus_next_row(event, row, col, entries):
+    """
+    @brief 将焦点移动到下一行的同一列
+    @param event 事件对象
+    @param row 当前行索引
+    @param col 当前列索引
+    @param entries 输入项列表
+    """
+    if row < len(entries) - 1:
+        entries[row+1][col].focus()
+
+
+def focus_previous_row(event, row, col, entries):
+    """
+    @brief 将焦点移动到上一行的同一列
+    @param event 事件对象
+    @param row 当前行索引
+    @param col 当前列索引
+    @param entries 输入项列表
+    """
+    if row > 0:
+        entries[row-1][col].focus()
+
 
 class EquationSolverApp:
     """
@@ -13,6 +97,57 @@ class EquationSolverApp:
         @brief 初始化EquationSolverApp类
         @param root 根窗口
         """
+        self.multiply_radio = None
+        self.power_radio = None
+        self.rank_radio = None
+        self.transpose_radio = None
+        self.inverse_radio = None
+        self.determinant_radio = None
+        self.operation = None
+        self.operation_label = None
+        self.operation_frame = None
+        self.multiply_a_col_entry = None
+        self.multiply_b_col_entry = None
+        self.multiply_b_label = None
+        self.multiply_a_row_entry = None
+        self.multiply_a_label = None
+        self.matrix_multiply_frame = None
+        self.eigen_radio = None
+        self.button_frame = None
+        self.solve_button = None
+        self.test_button = None
+        self.clear_button = None
+        self.quit_button = None
+        self.output_frame = None
+        self.output_label = None
+        self.output_text = None
+        self.matrix_power_frame = None
+        self.power_entry = None
+        self.multiply_button = None
+        self.power_label = None
+        self.matrix_frame = None
+        self.matrix_row_col_button = None
+        self.matrix_col_entry = None
+        self.matrix_dim_button = None
+        self.matrix_dim_entry = None
+        self.linear_var_entry = None
+        self.matrix_dim_label = None
+        self.matrix_col_label = None
+        self.linear_dim_button = None
+        self.matrix_row_entry = None
+        self.linear_var_label = None
+        self.linear_dim_frame = None
+        self.equation_text = None
+        self.matrix_row_col_frame = None
+        self.matrix_row_label = None
+        self.equation_label = None
+        self.input_frame = None
+        self.matrix_radio = None
+        self.linear_radio = None
+        self.nonlinear_radio = None
+        self.mode_frame = None
+        self.matrix_dim_frame = None
+        self.linear_frame = None
         self.root = root
         self.root.title("多功能计算器")
         self.create_widgets()
@@ -224,10 +359,10 @@ class EquationSolverApp:
                     entry_label.grid(row=i * 2, column=j, padx=5, pady=5)
                     entry = tk.Entry(self.linear_frame, width=5)
                     entry.grid(row=i * 2 + 1, column=j, padx=5, pady=5)
-                    entry.bind("<Up>", lambda event, row=i, col=j: self.focus_previous_row(event, row, col, self.linear_entries))
-                    entry.bind("<Down>", lambda event, row=i, col=j: self.focus_next_row(event, row, col, self.linear_entries))
-                    entry.bind("<Left>", lambda event, row=i, col=j: self.focus_previous_col(event, row, col, self.linear_entries))
-                    entry.bind("<Right>", lambda event, row=i, col=j: self.focus_next_col(event, row, col, self.linear_entries))
+                    entry.bind("<Up>", lambda event, row=i, col=j: focus_previous_row(event, row, col, self.linear_entries))
+                    entry.bind("<Down>", lambda event, row=i, col=j: focus_next_row(event, row, col, self.linear_entries))
+                    entry.bind("<Left>", lambda event, row=i, col=j: focus_previous_col(event, row, col, self.linear_entries))
+                    entry.bind("<Right>", lambda event, row=i, col=j: focus_next_col(event, row, col, self.linear_entries))
                     row_entries.append(entry)
                 self.linear_entries.append(row_entries)
             self.linear_frame.pack()
@@ -260,10 +395,10 @@ class EquationSolverApp:
                     entry_label.grid(row=i * 2, column=j, padx=5, pady=5)
                     entry = tk.Entry(self.matrix_frame, width=5)
                     entry.grid(row=i * 2 + 1, column=j, padx=5, pady=5)
-                    entry.bind("<Up>", lambda event, row=i, col=j: self.focus_previous_row(event, row, col, self.matrix_entries))
-                    entry.bind("<Down>", lambda event, row=i, col=j: self.focus_next_row(event, row, col, self.matrix_entries))
-                    entry.bind("<Left>", lambda event, row=i, col=j: self.focus_previous_col(event, row, col, self.matrix_entries))
-                    entry.bind("<Right>", lambda event, row=i, col=j: self.focus_next_col(event, row, col, self.matrix_entries))
+                    entry.bind("<Up>", lambda event, row=i, col=j: focus_previous_row(event, row, col, self.matrix_entries))
+                    entry.bind("<Down>", lambda event, row=i, col=j: focus_next_row(event, row, col, self.matrix_entries))
+                    entry.bind("<Left>", lambda event, row=i, col=j: focus_previous_col(event, row, col, self.matrix_entries))
+                    entry.bind("<Right>", lambda event, row=i, col=j: focus_next_col(event, row, col, self.matrix_entries))
                     row_entries.append(entry)
                 self.matrix_entries.append(row_entries)
             self.matrix_frame.pack()
@@ -291,10 +426,10 @@ class EquationSolverApp:
                     entry_label.grid(row=i * 2, column=j, padx=5, pady=5)
                     entry = tk.Entry(self.matrix_frame, width=5)
                     entry.grid(row=i * 2 + 1, column=j, padx=5, pady=5)
-                    entry.bind("<Up>", lambda event, row=i, col=j: self.focus_previous_row(event, row, col, self.matrix_entries))
-                    entry.bind("<Down>", lambda event, row=i, col=j: self.focus_next_row(event, row, col, self.matrix_entries))
-                    entry.bind("<Left>", lambda event, row=i, col=j: self.focus_previous_col(event, row, col, self.matrix_entries))
-                    entry.bind("<Right>", lambda event, row=i, col=j: self.focus_next_col(event, row, col, self.matrix_entries))
+                    entry.bind("<Up>", lambda event, row=i, col=j: focus_previous_row(event, row, col, self.matrix_entries))
+                    entry.bind("<Down>", lambda event, row=i, col=j: focus_next_row(event, row, col, self.matrix_entries))
+                    entry.bind("<Left>", lambda event, row=i, col=j: focus_previous_col(event, row, col, self.matrix_entries))
+                    entry.bind("<Right>", lambda event, row=i, col=j: focus_next_col(event, row, col, self.matrix_entries))
                     row_entries.append(entry)
                 self.matrix_entries.append(row_entries)
             self.matrix_frame.pack()
@@ -330,10 +465,10 @@ class EquationSolverApp:
                     entry_label.grid(row=i * 2, column=j, padx=5, pady=5)
                     entry = tk.Entry(self.matrix_frame, width=5)
                     entry.grid(row=i * 2 + 1, column=j, padx=5, pady=5)
-                    entry.bind("<Up>", lambda event, row=i, col=j: self.focus_previous_row(event, row, col, self.matrix_a_entries))
-                    entry.bind("<Down>", lambda event, row=i, col=j: self.focus_next_row(event, row, col, self.matrix_a_entries))
-                    entry.bind("<Left>", lambda event, row=i, col=j: self.focus_previous_col(event, row, col, self.matrix_a_entries))
-                    entry.bind("<Right>", lambda event, row=i, col=j: self.focus_next_col(event, row, col, self.matrix_a_entries))
+                    entry.bind("<Up>", lambda event, row=i, col=j: focus_previous_row(event, row, col, self.matrix_a_entries))
+                    entry.bind("<Down>", lambda event, row=i, col=j: focus_next_row(event, row, col, self.matrix_a_entries))
+                    entry.bind("<Left>", lambda event, row=i, col=j: focus_previous_col(event, row, col, self.matrix_a_entries))
+                    entry.bind("<Right>", lambda event, row=i, col=j: focus_next_col(event, row, col, self.matrix_a_entries))
                     row_entries.append(entry)
                 self.matrix_a_entries.append(row_entries)
             for i in range(a_cols):
@@ -343,10 +478,10 @@ class EquationSolverApp:
                     entry_label.grid(row=i * 2 + a_rows * 2, column=j, padx=5, pady=5)
                     entry = tk.Entry(self.matrix_frame, width=5)
                     entry.grid(row=i * 2 + 1 + a_rows * 2, column=j, padx=5, pady=5)
-                    entry.bind("<Up>", lambda event, row=i, col=j: self.focus_previous_row(event, row, col, self.matrix_b_entries))
-                    entry.bind("<Down>", lambda event, row=i, col=j: self.focus_next_row(event, row, col, self.matrix_b_entries))
-                    entry.bind("<Left>", lambda event, row=i, col=j: self.focus_previous_col(event, row, col, self.matrix_b_entries))
-                    entry.bind("<Right>", lambda event, row=i, col=j: self.focus_next_col(event, row, col, self.matrix_b_entries))
+                    entry.bind("<Up>", lambda event, row=i, col=j: focus_previous_row(event, row, col, self.matrix_b_entries))
+                    entry.bind("<Down>", lambda event, row=i, col=j: focus_next_row(event, row, col, self.matrix_b_entries))
+                    entry.bind("<Left>", lambda event, row=i, col=j: focus_previous_col(event, row, col, self.matrix_b_entries))
+                    entry.bind("<Right>", lambda event, row=i, col=j: focus_next_col(event, row, col, self.matrix_b_entries))
                     row_entries.append(entry)
                 self.matrix_b_entries.append(row_entries)
             self.matrix_frame.pack()
@@ -355,92 +490,6 @@ class EquationSolverApp:
             self.output_text.insert(tk.END, f"错误: {str(e)}\n")
             self.output_text.config(state=tk.DISABLED)
 
-    def focus_previous_row(self, event, row, col, entries):
-        """
-        @brief 将焦点移动到上一行的同一列
-        @param event 事件对象
-        @param row 当前行索引
-        @param col 当前列索引
-        @param entries 输入项列表
-        """
-        if row > 0:
-            entries[row-1][col].focus()
-
-    def focus_next_row(self, event, row, col, entries):
-        """
-        @brief 将焦点移动到下一行的同一列
-        @param event 事件对象
-        @param row 当前行索引
-        @param col 当前列索引
-        @param entries 输入项列表
-        """
-        if row < len(entries) - 1:
-            entries[row+1][col].focus()
-
-    def focus_previous_col(self, event, row, col, entries):
-        """
-        @brief 将焦点移动到同一行的上一列
-        @param event 事件对象
-        @param row 当前行索引
-        @param col 当前列索引
-        @param entries 输入项列表
-        """
-        if col > 0:
-            entries[row][col-1].focus()
-
-    def focus_next_col(self, event, row, col, entries):
-        """
-        @brief 将焦点移动到同一行的下一列
-        @param event 事件对象
-        @param row 当前行索引
-        @param col 当前列索引
-        @param entries 输入项列表
-        """
-        if col < len(entries[row]) - 1:
-            entries[row][col+1].focus()
-
-    def get_matrix_from_entries(self, matrix_entries):
-        """
-        @brief 从输入项中获取矩阵
-        @param matrix_entries 输入项列表
-        @return 矩阵
-        """
-        matrix = []
-        for row_entries in matrix_entries:
-            row = []
-            for entry in row_entries:
-                value = entry.get()
-                if value == "":
-                    value = "0"
-                try:
-                    row.append(float(value))
-                except ValueError:
-                    row.append(0.0)
-            matrix.append(row)
-        return matrix
-
-    def display_matrix_in_output(self, matrix):
-        """
-        @brief 在输出区域显示矩阵
-        @param matrix 矩阵
-        """
-        self.output_text.config(state=tk.NORMAL)
-        self.output_text.delete("1.0", tk.END)
-        for row in matrix:
-            row_str = "\t".join(self.format_number(num) for num in row)
-            self.output_text.insert(tk.END, f"{row_str}\n")
-        self.output_text.config(state=tk.DISABLED)
-
-    def format_number(self, num):
-        """
-        @brief 格式化数字
-        @param num 数字
-        @return 格式化后的字符串
-        """
-        if num == int(num):
-            return str(int(num))
-        else:
-            return f"{num:.6f}"
     def solve(self):
         """
         @brief 解决方程或矩阵运算，非法输入时抛出异常
@@ -454,39 +503,39 @@ class EquationSolverApp:
                 if operation == "multiply":
                     if not self.matrix_a_entries or not self.matrix_b_entries:
                         raise ValueError("矩阵A和矩阵B不能为空。")
-                    matrix_a = sp.Matrix(self.get_matrix_from_entries(self.matrix_a_entries))
-                    matrix_b = sp.Matrix(self.get_matrix_from_entries(self.matrix_b_entries))
+                    matrix_a = sp.Matrix(get_matrix_from_entries(self.matrix_a_entries))
+                    matrix_b = sp.Matrix(get_matrix_from_entries(self.matrix_b_entries))
                     if matrix_a.shape[1] != matrix_b.shape[0]:
                         raise ValueError("矩阵A的列数必须等于矩阵B的行数。")
                     result = matrix_a * matrix_b
-                    self.display_matrix_in_output(result.tolist())
+                    display_matrix_in_output(self.output_text,result.tolist())
                 else:
                     if not self.matrix_entries:
                         raise ValueError("矩阵不能为空。")
-                    matrix = sp.Matrix(self.get_matrix_from_entries(self.matrix_entries))
+                    matrix = sp.Matrix(get_matrix_from_entries(self.matrix_entries))
                     if operation == "determinant":
                         result = matrix.det()
-                        self.output_text.insert(tk.END, f"行列式的结果为: {self.format_number(result)}")
+                        self.output_text.insert(tk.END, f"行列式的结果为: {format_number(result)}")
                     elif operation == "inverse":
                         result = matrix.inv()
-                        self.display_matrix_in_output(result.tolist())
+                        display_matrix_in_output(self.output_text,result.tolist())
                     elif operation == "transpose":
                         result = matrix.T
-                        self.display_matrix_in_output(result.tolist())
+                        display_matrix_in_output(self.output_text,result.tolist())
                     elif operation == "rank":
                         result = matrix.rank()
-                        self.output_text.insert(tk.END, f"矩阵秩的结果为: {self.format_number(result)}")
+                        self.output_text.insert(tk.END, f"矩阵秩的结果为: {format_number(result)}")
                     elif operation == "power":
                         power = int(self.power_entry.get())
                         result = matrix ** power
-                        self.display_matrix_in_output(result.tolist())
+                        display_matrix_in_output(self.output_text,result.tolist())
                     elif operation == "eigen":
                         eigenvalues = matrix.eigenvals()
                         eigenvectors = matrix.eigenvects()
                         eigenvalues_str = "\n".join(
-                            f"特征值 {self.format_number(key)}: 重数 {val}" for key, val in eigenvalues.items())
+                            f"特征值 {format_number(key)}: 重数 {val}" for key, val in eigenvalues.items())
                         eigenvectors_str = "\n".join(
-                            f"特征向量 {i + 1}: {', '.join(self.format_number(val) for val in vec)}"
+                            f"特征向量 {i + 1}: {', '.join(format_number(val) for val in vec)}"
                             for i, (val, mult, vecs) in enumerate(eigenvectors)
                             for vec in vecs)
                         self.output_text.insert(tk.END, f"特征值为:\n{eigenvalues_str}\n")
@@ -528,7 +577,7 @@ class EquationSolverApp:
                         solution = next(iter(solutions))
                         results_str = "方程组有唯一解:\n"
                         results_str += "\n".join(
-                            [f"{symbol} = {self.format_number(value)}" for symbol, value in
+                            [f"{symbol} = {format_number(value)}" for symbol, value in
                              zip(sp.symbols(f'x1:{num_variables + 1}'), solution)])  # 使用 format_number 格式化解
                         self.output_text.insert(tk.END, results_str)
                     else:
@@ -568,7 +617,7 @@ class EquationSolverApp:
 
                         verified_roots = verify_roots(roots, expr, symbol)
                         if verified_roots:
-                            results_str = "\n".join([f"{symbol}{i + 1}: {self.format_number(root)}" for i, root in
+                            results_str = "\n".join([f"{symbol}{i + 1}: {format_number(root)}" for i, root in
                                                      enumerate(verified_roots)])
                             results_str = results_str.replace('j', 'i')
                             self.output_text.insert(tk.END, f"方程的根为:\n{results_str}")
@@ -669,7 +718,7 @@ class EquationSolverApp:
                     self.output_text.insert(tk.END, "非线性方程测试结果: 全部通过\n")
                 else:
                     failed_details = "\n".join(
-                        [f"根 {self.format_number(root)} 未通过" for root, passed in test_results.items() if
+                        [f"根 {format_number(root)} 未通过" for root, passed in test_results.items() if
                          not passed])
                     self.output_text.insert(tk.END, f"非线性方程测试结果: 有未通过\n{failed_details}")
 
@@ -680,12 +729,3 @@ class EquationSolverApp:
             self.output_text.insert(tk.END, f"错误: {str(e)}")
 
         self.output_text.config(state=tk.DISABLED)
-
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = EquationSolverApp(root)
-    root.mainloop()
-
-
-
