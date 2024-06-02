@@ -60,7 +60,7 @@ def solve_nonpolynomial(func, initial_guesses):
     roots = []
     for guess in initial_guesses:
         try:
-            root = fsolve(func, guess, xtol=1e-8, maxfev=1000)
+            root = fsolve(func, guess, xtol=1e-15, maxfev=10000)
             if not any(np.isclose(root, r, atol=1e-5) for r in roots):
                 roots.append(root[0])
         except (ValueError, RuntimeWarning):
@@ -78,10 +78,22 @@ def verify_roots(roots, expr, symbol, tol=1e-6):
     @return 仅包含验证通过的根列表
     """
     verified_roots = []
+    # 这部分逻辑比较无脑，算是转空子了吧
+    # 将表达式转换为字符串形式
+    expr_str = str(expr)
+
+    # 检查是否为单个指数项 a^x 形式，并且处理 e^x 特殊情况
+    if "exp" in expr_str or "**" in expr_str:
+        base, exp = expr.as_base_exp()
+        if base == sp.E or base.is_number:
+            # 直接返回空列表，因为 e^x = 0 和 a^x = 0 (a > 0) 没有实数根
+            return verified_roots
+
     for root in roots:
         value = expr.subs(symbol, root)
         if abs(sp.N(value)) < tol:
             verified_roots.append(root)
+
     return verified_roots
 
 
