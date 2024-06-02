@@ -12,6 +12,7 @@ def preprocess_expression(expression):
     expression = expression.replace('−', '-')
     expression = expression.replace('×', '*')
     expression = expression.replace(' ', '')
+    expression = expression.replace('e', str(sp.E))
     processed_expr = ''
     for i in range(len(expression)):
         if expression[i].isalpha() and i > 0 and (expression[i - 1].isdigit() or expression[i - 1] == ')'):
@@ -54,13 +55,19 @@ def solve_linear_system(equations, variables):
 
     @param equations 线性方程表达式列表
     @param variables 变量列表
-    @return 线性方程组的解
+    @return 线性方程组的解或无穷多解的参数化形式
     @throw ValueError 当方程组无解时抛出异常
     """
     solutions = sp.linsolve(equations, variables)
     if not solutions:
         raise ValueError("方程组无解。")
-    return np.array(list(solutions)[0], dtype=float)
+    solution_list = list(solutions)
+    if len(solution_list) == 1:
+        return np.array(solution_list[0], dtype=float)
+    else:
+        return solution_list
+
+
 
 def solve_polynomial(coeffs):
     """
