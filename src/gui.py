@@ -850,7 +850,7 @@ class EquationSolverApp:
                             tk_img = ImageTk.PhotoImage(img)
 
                             tk.Label(img_win, image=tk_img).pack()
-                            img_win.mainloop()
+                            # img_win.mainloop()
 
                         else:
                             func = sp.lambdify(symbol, expr, 'numpy')
