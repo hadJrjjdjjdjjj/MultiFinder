@@ -518,12 +518,12 @@ class EquationSolverApp:
                 operation = self.operation.get()
                 if operation == "multiply":
                     if not self.matrix_a_entries or not self.matrix_b_entries:
-                        self.output_text.insert(tk.END, "错误: 矩阵A和矩阵B不能为空。\n", "error")
+                        self.output_text.insert(tk.END, "错误: 矩阵A和矩阵B不能为空!\n", "error")
                         return
                     matrix_a = sp.Matrix(get_matrix_from_entries(self.matrix_a_entries))
                     matrix_b = sp.Matrix(get_matrix_from_entries(self.matrix_b_entries))
                     if matrix_a.shape[1] != matrix_b.shape[0]:
-                        self.output_text.insert(tk.END, "错误: 矩阵A的列数必须等于矩阵B的行数。\n", "error")
+                        self.output_text.insert(tk.END, "错误: 矩阵A的列数必须等于矩阵B的行数!\n", "error")
                         return
                     result = matrix_a * matrix_b
                     display_matrix_in_output(self.output_text, result.tolist())
@@ -532,7 +532,7 @@ class EquationSolverApp:
                                                     format_matrix(result), "multiply")
                 else:
                     if not self.matrix_entries:
-                        self.output_text.insert(tk.END, "错误: 矩阵不能为空。\n", "error")
+                        self.output_text.insert(tk.END, "错误: 矩阵不能为空!\n", "error")
                         return
                     matrix = sp.Matrix(get_matrix_from_entries(self.matrix_entries))
                     if operation == "determinant":
@@ -595,7 +595,7 @@ class EquationSolverApp:
                                 row.append(value)
                         coefficients.append(row)
                     if not coefficients or not constants:
-                        self.output_text.insert(tk.END, "错误: 方程组不能为空。\n", "error")
+                        self.output_text.insert(tk.END, "错误: 方程组不能为空!\n", "error")
                         return
 
                     augmented_matrix = sp.Matrix([row + [const] for row, const in zip(coefficients, constants)])
@@ -640,7 +640,7 @@ class EquationSolverApp:
                     equations_text = self.equation_text.get("1.0", tk.END).strip()
                     equations_lines = equations_text.splitlines()
                     if not equations_lines:
-                        self.output_text.insert(tk.END, "错误: 非线性方程不能为空。\n", "error")
+                        self.output_text.insert(tk.END, "错误: 非线性方程不能为空!\n", "error")
                         return
                     for line in equations_lines:
                         if '=' in line:
@@ -657,7 +657,7 @@ class EquationSolverApp:
                             roots = solve_polynomial(coeffs)
                         else:
                             func = sp.lambdify(symbol, expr, 'numpy')
-                            initial_guesses = generate_initial_guesses(50, 0.1, 10)
+                            initial_guesses = generate_initial_guesses(50, -10, 10)
                             roots = solve_nonpolynomial(func, initial_guesses)
 
                         verified_roots = verify_roots(roots, expr, symbol)
@@ -672,10 +672,10 @@ class EquationSolverApp:
                             self.output_text.insert(tk.END, "方程没有实数根。\n")
                             self.history_manager.add_record("nonlinear", equations_lines[0], "方程没有实数根。")
                     else:
-                        self.output_text.insert(tk.END, "错误: 请确保输入一个非线性方程。\n", "error")
+                        self.output_text.insert(tk.END, "错误: 请确保输入一个非线性方程!\n", "error")
                         return
         except Exception as e:
-            self.output_text.insert(tk.END, f"错误: {str(e)}\n", "error")
+            self.output_text.insert(tk.END, f"错误: {str(e)}!\n", "error")
 
         self.output_text.config(state=tk.DISABLED)
 
@@ -711,7 +711,7 @@ class EquationSolverApp:
                     coefficients.append(row)
 
                 if not coefficients or not constants:
-                    self.output_text.insert(tk.END, "错误: 方程组不能为空。\n", "error")
+                    self.output_text.insert(tk.END, "错误: 方程组不能为空!\n", "error")
                     raise ValueError("方程组不能为空。")
 
                 augmented_matrix = sp.Matrix([row + [const] for row, const in zip(coefficients, constants)])
@@ -750,7 +750,7 @@ class EquationSolverApp:
                 equations_text = self.equation_text.get("1.0", tk.END).strip()
                 equations_lines = equations_text.splitlines()
                 if len(equations_lines) != 1:
-                    self.output_text.insert(tk.END, "错误: 无计算结果，请输入方程求解后再测试验证。\n", "error")
+                    self.output_text.insert(tk.END, "错误: 无计算结果，请输入方程求解后再测试验证!\n", "error")
                     raise ValueError("无计算结果，请输入方程求解后再测试验证。")
 
                 expr, symbol, coeffs, is_polynomial = parse_expression(equations_lines[0])
@@ -775,10 +775,9 @@ class EquationSolverApp:
                         self.output_text.insert(tk.END, f"非线性方程测试结果: 有未通过\n{failed_details}")
 
             else:
-                self.output_text.insert(tk.END, "错误: 此功能仅适用于非线性方程和线性方程组的测试验证。\n", "error")
+                self.output_text.insert(tk.END, "错误: 此功能仅适用于非线性方程和线性方程组的测试验证!\n", "error")
 
         except Exception as e:
-            self.output_text.insert(tk.END, f"错误: {str(e)}\n", "error")
+            self.output_text.insert(tk.END, f"错误: {str(e)}!\n", "error")
 
         self.output_text.config(state=tk.DISABLED)
-

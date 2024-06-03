@@ -42,7 +42,7 @@ def format_number(num):
     if num == int(num):
         return str(int(num))
     else:
-        formatted_num = f"{num:.8f}"
+        formatted_num = f"{num:.6f}"  # 精度的话当然是小数位数越多越好，但是考虑到计算中对于出事猜测值的影响会引入一定的误差，这时舍弃低位反而效果更好
         return formatted_num.rstrip('0').rstrip('.') if '.' in formatted_num else formatted_num
 
 
@@ -69,6 +69,13 @@ def preprocess_expression(expression):
     expression = expression.replace('×', '*')
     expression = expression.replace(' ', '')
     expression = expression.replace('e', 'exp(1)')  # 替换 e 为 exp(1)
+
+    # 替换函数名称
+    expression = expression.replace('arcsin', 'asin')
+    expression = expression.replace('arccos', 'acos')
+    expression = expression.replace('arctan', 'atan')
+    expression = expression.replace('arccot', 'acot')
+
     processed_expr = ''
     for i in range(len(expression)):
         if expression[i].isalpha() and i > 0 and (expression[i - 1].isdigit() or expression[i - 1] == ')'):
@@ -106,7 +113,7 @@ def parse_expression(expression):
         return expr, symbol, None, False
 
 
-def generate_initial_guesses(n, range_min=0.1, range_max=10):
+def generate_initial_guesses(n, range_min=-100, range_max=100):
     """
     @brief 生成初始猜测值，范围不包括无效值 (如对数函数的非正数输入)。
     @param n 初始猜测值的数量
@@ -116,7 +123,15 @@ def generate_initial_guesses(n, range_min=0.1, range_max=10):
     """
     return np.linspace(range_min, range_max, n)
 
-
+# def generate_initial_guesses(n, range_min=0.1, range_max=10):
+#     """
+#     @brief 生成初始猜测值，范围不包括无效值 (如对数函数的非正数输入)。
+#     @param n 初始猜测值的数量
+#     @param range_min 范围最小值 (默认值为 0.1)
+#     @param range_max 范围最大值 (默认值为 10)
+#     @return 初始猜测值列表
+#     """
+#     return np.linspace(range_min, range_max, n)
 def get_matrix_from_entries(matrix_entries):
     """
     @brief 从输入项中获取矩阵

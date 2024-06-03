@@ -12,6 +12,7 @@
 - 计算两个矩阵的乘积
 - 计算矩阵的特征值和特征向量
 - 测试非线性方程和线性方程组的解是否满足方程
+- 求解周期性函数的根
 
 @version 1.0
 @date 2024-06-02
@@ -20,6 +21,35 @@
 import numpy as np
 import sympy as sp
 from scipy.optimize import fsolve
+import math
+from utils import *
+
+
+def solve_periodic_function(func, symbol, period, range_min=-10, range_max=10):
+    """
+    @brief 求解周期性函数的根
+    @param func 方程的 lambda 函数
+    @param symbol 方程中的变量符号
+    @param period 函数的周期
+    @param range_min 搜索范围的最小值
+    @param range_max 搜索范围的最大值
+    @return 周期性函数的根
+    """
+    roots = []
+    initial_guesses = generate_initial_guesses(100, range_min, range_max)
+    for guess in initial_guesses:
+        try:
+            root = fsolve(func, guess, xtol=1e-12, maxfev=10000)
+            root_value = root[0]
+            k = math.floor((range_min - root_value) / period)
+            while k * period + root_value <= range_max:
+                candidate_root = k * period + root_value
+                if not any(np.isclose(candidate_root, r, atol=1e-5) for r in roots):
+                    roots.append(candidate_root)
+                k += 1
+        except (ValueError, RuntimeWarning) as e:
+            continue
+    return roots
 
 
 def solve_linear_system(equations, variables):
@@ -68,6 +98,34 @@ def solve_nonpolynomial(func, initial_guesses):
     return np.array(roots)
 
 
+# def verify_roots(roots, expr, symbol, tol=1e-6):
+#     """
+#     @brief 验证求出的根是否为方程的根。
+#     @param roots 求出的根
+#     @param expr 方程表达式
+#     @param symbol 方程中的变量符号
+#     @param tol 验证的容差
+#     @return 仅包含验证通过的根列表
+#     """
+#     verified_roots = []
+#     # 这部分逻辑比较无脑，算是转空子了吧
+#     # 将表达式转换为字符串形式
+#     expr_str = str(expr)
+#
+#     # 检查是否为单个指数项 a^x 形式，并且处理 e^x 特殊情况
+#     if "exp" in expr_str or "**" in expr_str:
+#         base, exp = expr.as_base_exp()
+#         if base == sp.E or base.is_number:
+#             # 直接返回空列表，因为 e^x = 0 和 a^x = 0 (a > 0) 没有实数根
+#             return verified_roots
+#
+#     for root in roots:
+#         value = expr.subs(symbol, root)
+#         if abs(sp.N(value)) < tol:
+#             verified_roots.append(root)
+#
+#     return verified_roots
+
 def verify_roots(roots, expr, symbol, tol=1e-6):
     """
     @brief 验证求出的根是否为方程的根。
@@ -78,8 +136,6 @@ def verify_roots(roots, expr, symbol, tol=1e-6):
     @return 仅包含验证通过的根列表
     """
     verified_roots = []
-    # 这部分逻辑比较无脑，算是转空子了吧
-    # 将表达式转换为字符串形式
     expr_str = str(expr)
 
     # 检查是否为单个指数项 a^x 形式，并且处理 e^x 特殊情况
@@ -90,9 +146,35 @@ def verify_roots(roots, expr, symbol, tol=1e-6):
             return verified_roots
 
     for root in roots:
-        value = expr.subs(symbol, root)
-        if abs(sp.N(value)) < tol:
-            verified_roots.append(root)
+        try:
+            value = expr.subs(symbol, root)
+            if abs(sp.N(value)) < tol:
+                verified_roots.append(root)
+        except (TypeError, ValueError):
+            continue
+
+    # 针对特殊函数的特殊处理
+    expr_str = str(expr)
+    if "acos" in expr_str:
+        special_roots = [1, -1]
+        for special_root in special_roots:
+            if abs(sp.N(expr.subs(symbol, special_root))) < tol and special_root not in verified_roots:
+                verified_roots.append(special_root)
+    if "asin" in expr_str:
+        special_roots = [0, 1, -1]
+        for special_root in special_roots:
+            if abs(sp.N(expr.subs(symbol, special_root))) < tol and special_root not in verified_roots:
+                verified_roots.append(special_root)
+    if "arccot" in expr_str or "cot" in expr_str:
+        special_roots = [0, sp.oo, -sp.oo]
+        for special_root in special_roots:
+            if abs(sp.N(expr.subs(symbol, special_root))) < tol and special_root not in verified_roots:
+                verified_roots.append(special_root)
+    if "arctan" in expr_str:
+        special_roots = [0]
+        for special_root in special_roots:
+            if abs(sp.N(expr.subs(symbol, special_root))) < tol and special_root not in verified_roots:
+                verified_roots.append(special_root)
 
     return verified_roots
 
