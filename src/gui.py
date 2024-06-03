@@ -14,10 +14,14 @@
 """
 
 import tkinter as tk
+
+import numpy as np
+
 from solver import *
 import sympy as sp
 from utils import *
 from historyManager import HistoryManager
+from PIL import Image, ImageTk
 
 
 class EquationSolverApp:
@@ -212,7 +216,7 @@ class EquationSolverApp:
         self.solve_button.pack(side=tk.LEFT, padx=10)
         filemenu = tk.Menu(self.solve_button, tearoff=False)
         filemenu.add_command(label='内置方法', command=self.solve)
-        filemenu.add_command(label='牛顿法', command=self.solve)
+        filemenu.add_command(label='牛顿法', command=self.solve_newton)
         # 在此处添加方法
         filemenu.add_command(label='其他')
         self.solve_button.config(menu=filemenu)
@@ -669,6 +673,197 @@ class EquationSolverApp:
                             func = sp.lambdify(symbol, expr, 'numpy')
                             initial_guesses = generate_initial_guesses(50, -10, 10)
                             roots = solve_nonpolynomial(func, initial_guesses)
+
+                        verified_roots = verify_roots(roots, expr, symbol)
+                        if verified_roots:
+                            results_str = "\n".join(
+                                [f"{symbol}{i + 1}: {format_number(root.real)} + {format_number(root.imag)}i"
+                                 if isinstance(root, complex) else f"{symbol}{i + 1}: {format_number(root)}"
+                                 for i, root in enumerate(verified_roots)])
+                            self.output_text.insert(tk.END, f"方程的根为:\n{results_str}")
+                            self.history_manager.add_record("nonlinear", equations_lines[0], results_str)
+                        else:
+                            self.output_text.insert(tk.END, "方程没有实数根。\n")
+                            self.history_manager.add_record("nonlinear", equations_lines[0], "方程没有实数根。")
+                    else:
+                        self.output_text.insert(tk.END, "错误: 请确保输入一个非线性方程!\n", "error")
+                        return
+        except Exception as e:
+            self.output_text.insert(tk.END, f"错误: {str(e)}!\n", "error")
+
+        self.output_text.config(state=tk.DISABLED)
+
+    def solve_newton(self):
+        """
+        @brief 解决方程或矩阵运算，非法输入时抛出异常
+        """
+        self.output_text.config(state=tk.NORMAL)
+        self.output_text.delete("1.0", tk.END)
+
+        try:
+            if self.mode.get() == "matrix":
+                operation = self.operation.get()
+                if operation == "multiply":
+                    if not self.matrix_a_entries or not self.matrix_b_entries:
+                        self.output_text.insert(tk.END, "错误: 矩阵A和矩阵B不能为空!\n", "error")
+                        return
+                    matrix_a = sp.Matrix(get_matrix_from_entries(self.matrix_a_entries))
+                    matrix_b = sp.Matrix(get_matrix_from_entries(self.matrix_b_entries))
+                    if matrix_a.shape[1] != matrix_b.shape[0]:
+                        self.output_text.insert(tk.END, "错误: 矩阵A的列数必须等于矩阵B的行数!\n", "error")
+                        return
+                    result = matrix_a * matrix_b
+                    display_matrix_in_output(self.output_text, result.tolist())
+                    self.history_manager.add_record("matrix",
+                                                    f"A:\n{format_matrix(matrix_a)}\nB:\n{format_matrix(matrix_b)}",
+                                                    format_matrix(result), "multiply")
+                else:
+                    if not self.matrix_entries:
+                        self.output_text.insert(tk.END, "错误: 矩阵不能为空!\n", "error")
+                        return
+                    matrix = sp.Matrix(get_matrix_from_entries(self.matrix_entries))
+                    if operation == "determinant":
+                        result = matrix.det()
+                        self.output_text.insert(tk.END, f"行列式的结果为: {format_number(result)}")
+                        self.history_manager.add_record("matrix", f"矩阵:\n{format_matrix(matrix)}",
+                                                        format_number(result), "determinant")
+                    elif operation == "inverse":
+                        result = matrix.inv()
+                        display_matrix_in_output(self.output_text, result.tolist())
+                        self.history_manager.add_record("matrix", f"矩阵:\n{format_matrix(matrix)}",
+                                                        format_matrix(result), "inverse")
+                    elif operation == "transpose":
+                        result = matrix.T
+                        display_matrix_in_output(self.output_text, result.tolist())
+                        self.history_manager.add_record("matrix", f"矩阵:\n{format_matrix(matrix)}",
+                                                        format_matrix(result), "transpose")
+                    elif operation == "rank":
+                        result = matrix.rank()
+                        self.output_text.insert(tk.END, f"矩阵秩的结果为: {format_number(result)}")
+                        self.history_manager.add_record("matrix", f"矩阵:\n{format_matrix(matrix)}",
+                                                        format_number(result), "rank")
+                    elif operation == "power":
+                        power = int(self.power_entry.get())
+                        result = matrix ** power
+                        display_matrix_in_output(self.output_text, result.tolist())
+                        self.history_manager.add_record("matrix", f"矩阵:\n{format_matrix(matrix)}\n幂次: {power}",
+                                                        format_matrix(result), "power")
+                    elif operation == "eigen":
+                        eigenvalues = matrix.eigenvals()
+                        eigenvectors = matrix.eigenvects()
+                        eigenvalues_str = "\n".join(
+                            f"特征值 {format_number(key)}: 重数 {val}" for key, val in eigenvalues.items())
+                        eigenvectors_str = "\n".join(
+                            f"特征向量 {i + 1}: {', '.join(format_number(val) for val in vec)}"
+                            for i, (val, mult, vecs) in enumerate(eigenvectors)
+                            for vec in vecs)
+                        self.output_text.insert(tk.END, f"特征值为:\n{eigenvalues_str}\n")
+                        self.output_text.insert(tk.END, f"特征向量为:\n{eigenvectors_str}")
+                        self.history_manager.add_record("matrix", f"矩阵:\n{format_matrix(matrix)}",
+                                                        f"特征值: {eigenvalues_str}, 特征向量: {eigenvectors_str}",
+                                                        "eigen")
+            else:
+                if self.mode.get() == "linear":
+                    coefficients = []
+                    constants = []
+                    for row_entries in self.linear_entries:
+                        if all(not entry.get() for entry in row_entries):
+                            continue
+                        row = []
+                        for j, entry in enumerate(row_entries):
+                            value = entry.get()
+                            if value == "":
+                                value = 0.0
+                            else:
+                                value = float(value)
+                            if j == len(row_entries) - 1:
+                                constants.append(value)
+                            else:
+                                row.append(value)
+                        coefficients.append(row)
+                    if not coefficients or not constants:
+                        self.output_text.insert(tk.END, "错误: 方程组不能为空!\n", "error")
+                        return
+
+                    augmented_matrix = sp.Matrix([row + [const] for row, const in zip(coefficients, constants)])
+                    coefficient_matrix = augmented_matrix[:, :-1]
+                    rank_coefficient_matrix = coefficient_matrix.rank()
+                    rank_augmented_matrix = augmented_matrix.rank()
+                    num_variables = len(coefficients[0])
+
+                    if rank_coefficient_matrix != rank_augmented_matrix:
+                        self.output_text.insert(tk.END, "方程组无解。\n")
+                        self.history_manager.add_record("linear",
+                                                        f"系数矩阵:\n{format_matrix(coefficient_matrix)}\n常数项:\n{constants}",
+                                                        "方程组无解")
+                    elif rank_coefficient_matrix == num_variables:
+                        solutions = sp.linsolve((coefficient_matrix, sp.Matrix(constants)),
+                                                *sp.symbols(f'x1:{num_variables + 1}'))
+                        solution = next(iter(solutions))
+                        results_str = "方程组有唯一解:\n"
+                        results_str += "\n".join(
+                            [f"{symbol} = {format_number(value)}" for symbol, value in
+                             zip(sp.symbols(f'x1:{num_variables + 1}'), solution)])  # 使用 format_number 格式化解
+                        self.output_text.insert(tk.END, results_str)
+                        self.history_manager.add_record("linear",
+                                                        f"系数矩阵:\n{format_matrix(coefficient_matrix)}\n常数项:\n{constants}",
+                                                        results_str)
+                    else:
+                        solutions = sp.linsolve((coefficient_matrix, sp.Matrix(constants)),
+                                                *sp.symbols(f'x1:{num_variables + 1}'))
+                        results_str = "方程组有无穷多解:\n"
+                        for solution in solutions:
+                            normalized_solution = [sp.simplify(value) for value in solution]
+                            results_str += "\n".join(
+                                [f"{symbol} = {value}" for symbol, value in
+                                 zip(sp.symbols(f'x1:{num_variables + 1}'), normalized_solution)])
+                            results_str += "\n"
+                        self.output_text.insert(tk.END, results_str)
+                        self.history_manager.add_record("linear",
+                                                        f"系数矩阵:\n{format_matrix(coefficient_matrix)}\n常数项:\n{constants}",
+                                                        results_str)
+                else:
+                    equations = []
+                    equations_text = self.equation_text.get("1.0", tk.END).strip()
+                    equations_lines = equations_text.splitlines()
+                    if not equations_lines:
+                        self.output_text.insert(tk.END, "错误: 非线性方程不能为空!\n", "error")
+                        return
+                    for line in equations_lines:
+                        if '=' in line:
+                            left, right = line.split('=')
+                            eq = sp.sympify(preprocess_expression(f"({left}) - ({right})"))
+                        else:
+                            eq = sp.sympify(preprocess_expression(line))
+                        equations.append(eq)
+
+                    if self.mode.get() == "nonlinear" and len(equations) == 1:
+                        expr, symbol, coeffs, is_polynomial = parse_expression(equations_lines[0])
+
+                        if is_polynomial:
+                            roots = solve_polynomial(coeffs)
+                            initial_guesses = np.linspace(-25, 25, 15)
+                            solve_and_visualize(expr, initial_guesses)
+
+                            img_win = tk.Toplevel()
+                            img = Image.open('pic.jpg')
+                            tk_img = ImageTk.PhotoImage(img)
+
+                            tk.Label(img_win, image=tk_img).pack()
+                            img_win.mainloop()
+
+                        else:
+                            func = sp.lambdify(symbol, expr, 'numpy')
+                            initial_guesses = generate_initial_guesses(50, -10, 10)
+                            roots = solve_nonpolynomial(func, initial_guesses)
+                            solve_and_visualize(expr, initial_guesses)
+
+                            img_win = tk.Toplevel()
+                            img = Image.open('pic.jpg')
+                            tk_img = ImageTk.PhotoImage(img)
+
+                            tk.Label(img_win, image=tk_img).pack()
+                            img_win.mainloop()
 
                         verified_roots = verify_roots(roots, expr, symbol)
                         if verified_roots:

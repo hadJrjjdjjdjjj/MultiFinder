@@ -25,22 +25,21 @@ import math
 from utils import *
 import matplotlib.pyplot as plt
 from PIL import Image
+from pylab import *
+
+mpl.rcParams['font.sans-serif'] = ['SimHei']
+mpl.rcParams['axes.unicode_minus'] = False
 
 
 def newton_raphson(f, df, x0, tol=1e-6, max_iter=1000):
     """
-    Newton-Raphson method for finding roots of the equation f(x) = 0.
-
-    Parameters:
-    f: The function for which we are finding the root
-    df: The derivative of the function f
-    x0: Initial guess for the root
-    tol: Tolerance for the root value
-    max_iter: Maximum number of iterations
-
-    Returns:
-    x: The estimated root of the function
-    iter_values: List of values of x during iteration
+        @brief 牛顿-拉夫森法用于求解方程 f(x) = 0 的根。
+        @param f 要求解根的函数
+        @param x0 根的初始猜测值
+        @param tol 根值的精度
+        @param max_iter 最大迭代次数
+        @return x 估算的函数根
+        @return iter_values 迭代过程中 x 的值列表
     """
     x = x0
     iter_values = [x0]
@@ -57,13 +56,12 @@ def newton_raphson(f, df, x0, tol=1e-6, max_iter=1000):
     raise ValueError("Maximum iterations exceeded; no convergence.")
 
 
-def solve_and_visualize(expr, initial_guesses, filename='pic.png'):
+def solve_and_visualize(expr, initial_guesses, filename='pic.jpg'):
     """
-    Solve an equation using Newton-Raphson method for multiple initial guesses and visualize the process.
-
-    Parameters:
-    expr: The equation to solve (sympy expression)
-    initial_guesses: List of initial guesses for the root
+        @brief 使用牛顿-拉夫森法求解方程，针对多个初始猜测并可视化求解过程
+        @param expr 方程的表达式
+        @param initial_guesses 初始猜测值的列表
+        @param filename 输出的迭代图片路径
     """
     # Define the function and its derivative
     x = sp.symbols('x')
@@ -75,26 +73,24 @@ def solve_and_visualize(expr, initial_guesses, filename='pic.png'):
     for i, x0 in enumerate(initial_guesses):
         try:
             root, iter_values = newton_raphson(f, df, x0)
-            print(f"Initial guess {x0}: Converged to root {root}")
+            # print(f"Initial guess {x0}: Converged to root {root}")
 
             # Prepare data for plotting
             iter_steps = list(range(len(iter_values)))
 
             # Plot the iteration process
             plt.plot(iter_steps, iter_values, marker='o', linestyle='dashed',
-                     label=f'Initial guess {x0}, root {root:.6f}')
+                     label=f'初始猜测值 {x0}, 根 {root:.6f}')
         except ValueError as e:
             print(f"Initial guess {x0}: {e}")
 
-    plt.xlabel('Iteration step')
-    plt.ylabel('Root value')
-    plt.title('Newton-Raphson Iteration for Multiple Initial Guesses')
+    plt.xlabel('迭代步数')
+    plt.ylabel('方程根的值')
+    plt.title('多初始值的牛顿迭代法')
     plt.legend()
     plt.grid(True)
     plt.savefig(filename)
-    image = Image.open(filename)
-    image.show()
-    plt.show()
+    # plt.show()
 
 
 def solve_periodic_function(func, symbol, period, range_min=-10, range_max=10):
