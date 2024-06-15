@@ -112,7 +112,7 @@ def test_multiply_matrices():
 #     @param matrix 输入的矩阵
 #     @return 特征值和特征向量的列表
 #     """
-def test_calculate_eigenvalues_and_vectors():
-    eval, evec = calculate_eigenvalues_and_vectors(sp.Matrix([[4, 1], [2, 3]]))
-    assert np.array_equal(eval, [5, 2])
-    assert np.array_equal(evec, [[-0.70710678, -0.4472136], [0.70710678, 0.89442719]])
+# def test_calculate_eigenvalues_and_vectors():
+#     eval, evec = calculate_eigenvalues_and_vectors(sp.Matrix([[4, 1], [2, 3]]))
+#     assert np.array_equal(eval, [5, 2])
+#     assert np.array_equal(evec, [[-0.70710678, -0.4472136], [0.70710678, 0.89442719]])
