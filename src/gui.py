@@ -873,10 +873,10 @@ class EquationSolverApp:
                                  for i, root in enumerate(verified_roots)])
                             self.output_text.insert(tk.END, f"方程的根为:\n{results_str}")
                             self.history_manager.add_record("nonlinear", equations_lines[0], results_str)
-                            img_win.mainloop()
                         else:
                             self.output_text.insert(tk.END, "方程没有实数根。\n")
                             self.history_manager.add_record("nonlinear", equations_lines[0], "方程没有实数根。")
+                        img_win.mainloop()
                     else:
                         self.output_text.insert(tk.END, "错误: 请确保输入一个非线性方程!\n", "error")
                         return
